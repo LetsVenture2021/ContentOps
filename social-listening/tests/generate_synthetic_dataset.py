@@ -23,15 +23,15 @@ def generate_example(example_id, category, index):
     if category == "lead_hard_money":
         authors = [f"investor_{i}" for i in range(50)]
         metros = ["Houston", "Dallas", "Austin", "Phoenix", "Atlanta", "Miami", "Denver", "Seattle"]
-        texts = [
-            f"Looking for a hard money lender in {random.choice(metros)} for a fix-and-flip deal. Need $250k for 6 months.",
-            f"Anyone know a good hard money lender for {random.choice(metros)} area? Working on a rehab project.",
-            f"Need bridge financing for commercial property in {random.choice(metros)}. Who do you recommend?",
-            f"Seeking hard money loan for rental property acquisition in {random.choice(metros)}. Fast close needed.",
-            f"Looking for recommendations on hard money lenders in the {random.choice(metros)} metro area.",
-        ]
         metro = random.choice(metros)
-        text = random.choice(texts).replace(metro, metro)  # Ensure consistency
+        text_templates = [
+            f"Looking for a hard money lender in {metro} for a fix-and-flip deal. Need $250k for 6 months.",
+            f"Anyone know a good hard money lender for {metro} area? Working on a rehab project.",
+            f"Need bridge financing for commercial property in {metro}. Who do you recommend?",
+            f"Seeking hard money loan for rental property acquisition in {metro}. Fast close needed.",
+            f"Looking for recommendations on hard money lenders in the {metro} metro area.",
+        ]
+        text = random.choice(text_templates)
         
         mention = {
             "platform": platform,
@@ -71,14 +71,14 @@ def generate_example(example_id, category, index):
     elif category == "lead_cash_buyer":
         authors = [f"seller_{i}" for i in range(30)]
         metros = ["Los Angeles", "San Diego", "Las Vegas", "Portland", "Sacramento"]
-        texts = [
-            f"Need to sell my rental property in {random.choice(metros)} quickly. Any cash buyers?",
-            f"Looking for cash buyer for distressed property in {random.choice(metros)}. Needs work.",
-            f"Have a portfolio of 3 rentals in {random.choice(metros)}. Looking for investor to buy.",
-            f"Selling off-market property in {random.choice(metros)}. Cash offers only.",
-        ]
         metro = random.choice(metros)
-        text = random.choice(texts).replace("random.choice(metros)", metro)
+        text_templates = [
+            f"Need to sell my rental property in {metro} quickly. Any cash buyers?",
+            f"Looking for cash buyer for distressed property in {metro}. Needs work.",
+            f"Have a portfolio of 3 rentals in {metro}. Looking for investor to buy.",
+            f"Selling off-market property in {metro}. Cash offers only.",
+        ]
+        text = random.choice(text_templates)
         
         mention = {
             "platform": platform,
@@ -118,14 +118,14 @@ def generate_example(example_id, category, index):
     elif category == "lead_capital":
         authors = [f"syndicator_{i}" for i in range(20)]
         metros = ["Chicago", "Boston", "Washington DC", "Nashville", "Tampa"]
-        texts = [
-            f"Raising $2M for multifamily syndication in {random.choice(metros)}. Looking for LP investors.",
-            f"Seeking capital partners for commercial development in {random.choice(metros)}. 15% preferred return.",
-            f"New fund forming for {random.choice(metros)} area student housing. Who's interested?",
-            f"JV opportunity on 150-unit multifamily in {random.choice(metros)}. Need equity partner.",
-        ]
         metro = random.choice(metros)
-        text = random.choice(texts).replace("random.choice(metros)", metro)
+        text_templates = [
+            f"Raising $2M for multifamily syndication in {metro}. Looking for LP investors.",
+            f"Seeking capital partners for commercial development in {metro}. 15% preferred return.",
+            f"New fund forming for {metro} area student housing. Who's interested?",
+            f"JV opportunity on 150-unit multifamily in {metro}. Need equity partner.",
+        ]
+        text = random.choice(text_templates)
         
         mention = {
             "platform": platform,
@@ -165,14 +165,14 @@ def generate_example(example_id, category, index):
     elif category == "reputation_negative":
         authors = [f"complainant_{i}" for i in range(25)]
         companies = ["XYZ Capital", "ABC Lending", "BestFund Group", "QuickFlip Co", "ReliableLenders Inc"]
-        texts = [
-            f"WARNING: Stay away from {random.choice(companies)}. They took my money and disappeared!",
-            f"DO NOT work with {random.choice(companies)}. Total scam. Filing complaints with state AG.",
-            f"{random.choice(companies)} is a fraud. They charged hidden fees and won't return calls.",
-            f"Terrible experience with {random.choice(companies)}. Might be illegal what they're doing.",
-        ]
         company = random.choice(companies)
-        text = random.choice(texts).replace("random.choice(companies)", company)
+        text_templates = [
+            f"WARNING: Stay away from {company}. They took my money and disappeared!",
+            f"DO NOT work with {company}. Total scam. Filing complaints with state AG.",
+            f"{company} is a fraud. They charged hidden fees and won't return calls.",
+            f"Terrible experience with {company}. Might be illegal what they're doing.",
+        ]
+        text = random.choice(text_templates)
         
         mention = {
             "platform": platform,
@@ -212,14 +212,14 @@ def generate_example(example_id, category, index):
     elif category == "reputation_question":
         authors = [f"curious_investor_{i}" for i in range(20)]
         companies = ["PrimeVest Partners", "Elite Capital", "SureInvest Group", "TrustFund Co"]
-        texts = [
-            f"Has anyone worked with {random.choice(companies)}? Are they legit?",
-            f"Considering investing with {random.choice(companies)}. Any reviews or experiences?",
-            f"What do people think about {random.choice(companies)}? Seems too good to be true.",
-            f"Due diligence question: Is {random.choice(companies)} trustworthy?",
-        ]
         company = random.choice(companies)
-        text = random.choice(texts).replace("random.choice(companies)", company)
+        text_templates = [
+            f"Has anyone worked with {company}? Are they legit?",
+            f"Considering investing with {company}. Any reviews or experiences?",
+            f"What do people think about {company}? Seems too good to be true.",
+            f"Due diligence question: Is {company} trustworthy?",
+        ]
+        text = random.choice(text_templates)
         
         mention = {
             "platform": platform,
@@ -260,14 +260,14 @@ def generate_example(example_id, category, index):
         authors = [f"satisfied_client_{i}" for i in range(15)]
         companies = ["OurCompany", "VentureGroup", "TopInvestors LLC"]
         metros = ["Charlotte", "Raleigh", "Orlando", "Memphis"]
-        texts = [
-            f"Just closed my 5th deal with {random.choice(companies)}. They're the real deal in {random.choice(metros)}!",
-            f"Shoutout to {random.choice(companies)} for excellent service on our {random.choice(metros)} project!",
-            f"Highly recommend {random.choice(companies)}. Professional and reliable in the {random.choice(metros)} market.",
-        ]
         company = random.choice(companies)
         metro = random.choice(metros)
-        text = random.choice(texts).replace("random.choice(companies)", company).replace("random.choice(metros)", metro)
+        text_templates = [
+            f"Just closed my 5th deal with {company}. They're the real deal in {metro}!",
+            f"Shoutout to {company} for excellent service on our {metro} project!",
+            f"Highly recommend {company}. Professional and reliable in the {metro} market.",
+        ]
+        text = random.choice(text_templates)
         
         mention = {
             "platform": platform,
@@ -360,14 +360,14 @@ def generate_example(example_id, category, index):
     elif category == "content_competitor":
         authors = [f"forum_user_{i}" for i in range(25)]
         competitors = ["Lima One", "Visio Lending", "Kiavi", "RCN Capital", "Anchor Loans"]
-        texts = [
-            f"Anyone have experience with {random.choice(competitors)}? How are their rates?",
-            f"Just got quoted by {random.choice(competitors)}. Seems high. What are alternatives?",
-            f"Comparing {random.choice(competitors)} to other DSCR lenders. Thoughts?",
-            f"{random.choice(competitors)} rejected my app. Who else should I try?",
-        ]
         competitor = random.choice(competitors)
-        text = random.choice(texts).replace("random.choice(competitors)", competitor)
+        text_templates = [
+            f"Anyone have experience with {competitor}? How are their rates?",
+            f"Just got quoted by {competitor}. Seems high. What are alternatives?",
+            f"Comparing {competitor} to other DSCR lenders. Thoughts?",
+            f"{competitor} rejected my app. Who else should I try?",
+        ]
+        text = random.choice(text_templates)
         
         mention = {
             "platform": platform,
