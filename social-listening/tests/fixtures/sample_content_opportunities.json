@@ -1,0 +1,126 @@
+{
+  "content_opportunities": [
+    {
+      "page_id": "test-content-001",
+      "topic": "How to Underwrite DSCR Loans in 15 Minutes",
+      "audience": "Operator",
+      "platform_target": "BiggerPockets",
+      "priority": 2,
+      "key_points": [
+        "Use automated underwriting tools to speed up the process",
+        "Focus on the property's cash flow, not personal income",
+        "Calculate DSCR by dividing net operating income by annual debt service",
+        "Most lenders require minimum DSCR of 1.25x",
+        "Factor in taxes, insurance, and property management costs"
+      ],
+      "proof_points": [
+        "DSCR loans close 40% faster than traditional mortgages",
+        "Average DSCR for approved loans in Texas is 1.35x",
+        "85% of operators prefer DSCR over conventional for investment properties"
+      ],
+      "source_mention_ids": ["mention-001", "mention-002"]
+    },
+    {
+      "page_id": "test-content-002",
+      "topic": "Off-Market Deal Sourcing: 5 Strategies That Work in 2025",
+      "audience": "CashBuyer",
+      "platform_target": "LinkedIn",
+      "priority": 1,
+      "key_points": [
+        "Direct mail campaigns to absentee owners",
+        "Build relationships with wholesalers and bird dogs",
+        "Drive for dollars in target neighborhoods",
+        "Use probate and divorce records",
+        "Partner with property managers for early deal flow"
+      ],
+      "proof_points": [
+        "Off-market deals typically 10-15% below market value",
+        "Direct mail response rates: 0.5-1% for targeted campaigns",
+        "Best ROI: probate leads (3x higher close rate)"
+      ],
+      "source_mention_ids": ["mention-003"]
+    },
+    {
+      "page_id": "test-content-003",
+      "topic": "Tax-Efficient Syndication Structures for Passive Investors",
+      "audience": "HNWI/LP",
+      "platform_target": "Substack",
+      "priority": 3,
+      "key_points": [
+        "Understand the difference between LLC and LP structures",
+        "Leverage cost segregation studies for accelerated depreciation",
+        "Consider opportunity zones for long-term tax deferral",
+        "K-1 reporting and passive loss limitations"
+      ],
+      "proof_points": [
+        "Cost segregation can increase first-year deductions by 30-40%",
+        "Opportunity zones offer 10-year capital gains deferral",
+        "Average syndication returns: 15-20% IRR with tax benefits"
+      ],
+      "source_mention_ids": ["mention-004", "mention-005"]
+    },
+    {
+      "page_id": "test-content-004",
+      "topic": "Why Houston Multifamily Is Outperforming Austin in 2025",
+      "audience": "Operator",
+      "platform_target": "X",
+      "priority": 2,
+      "key_points": [
+        "Population growth: Houston +2.1% vs Austin +1.3%",
+        "Lower construction costs and property taxes",
+        "More diverse economy (energy, medical, aerospace)",
+        "Cap rates 50-75 basis points higher"
+      ],
+      "proof_points": [
+        "Houston median rent: $1,450 (+8% YoY)",
+        "Austin vacancy rate: 7.2% vs Houston 5.8%",
+        "Houston permits up 15% while Austin down 22%"
+      ],
+      "source_mention_ids": ["mention-006"]
+    }
+  ],
+  "sample_mentions": [
+    {
+      "mention_id": "mention-001",
+      "platform": "BiggerPockets",
+      "author": "investor_mike",
+      "url": "https://biggerpockets.com/forums/12345",
+      "source_text": "Can someone explain DSCR loans? I keep hearing about them but don't understand how they work. Do I need to show W2 income? My rental has great cash flow but my personal income isn't that high. Looking to buy more properties without the traditional mortgage hassle."
+    },
+    {
+      "mention_id": "mention-002",
+      "platform": "Reddit",
+      "author": "realestate_pro",
+      "url": "https://reddit.com/r/realestateinvesting/comments/abc123",
+      "source_text": "DSCR loans are a game changer. Just closed on 3 properties using them. The lender only cares about the property's income, not mine. Calculate your net operating income and divide by your annual debt payment. If it's above 1.25, you're usually good. Closed in 21 days vs 45+ for conventional."
+    },
+    {
+      "mention_id": "mention-003",
+      "platform": "LinkedIn",
+      "author": "Sarah Thompson",
+      "url": "https://linkedin.com/posts/sarah-thompson-re_12345",
+      "source_text": "After analyzing 500+ deals this year, I can confirm: off-market deals consistently offer the best margins. Our direct mail campaign to absentee owners in Houston suburbs yielded 0.8% response rate and 12 closed deals at 14% below market. The key is targeting the right lists and persistent follow-up."
+    },
+    {
+      "mention_id": "mention-004",
+      "platform": "BiggerPockets",
+      "author": "passive_lp_investor",
+      "url": "https://biggerpockets.com/forums/67890",
+      "source_text": "Question for experienced LPs: How do you evaluate syndication sponsors? I have $500k to deploy and getting pitched constantly. What should I look for in terms of track record, fee structure, and tax efficiency? Also concerned about alignment of interests."
+    },
+    {
+      "mention_id": "mention-005",
+      "platform": "X",
+      "author": "@realestate_cpa",
+      "url": "https://x.com/realestate_cpa/status/12345",
+      "source_text": "PSA for passive investors: Don't overlook cost segregation in your syndication deals. A proper study can accelerate 30-40% of the building value into 5-7 year classes. On a $10M property, that's $3-4M in accelerated depreciation. Huge tax benefit in year 1."
+    },
+    {
+      "mention_id": "mention-006",
+      "platform": "LinkedIn",
+      "author": "Marcus Johnson",
+      "url": "https://linkedin.com/posts/marcus-johnson-multifamily_12345",
+      "source_text": "Contrarian take: Houston multifamily is a better play than Austin right now. Everyone's chasing Austin, but Houston has better fundamentals - lower vacancy (5.8% vs 7.2%), stronger job growth, and cap rates are 50-75 bps higher. Just closed a 150-unit deal in Pearland at 5.8% cap. Would've been 5.0% in Austin."
+    }
+  ]
+}
