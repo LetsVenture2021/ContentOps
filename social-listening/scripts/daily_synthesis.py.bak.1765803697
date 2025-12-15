@@ -1,0 +1,340 @@
+import os
+import json
+import math
+import shutil
+import datetime as dt
+import requests
+from dotenv import load_dotenv
+from jsonschema import validate
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CFG_PATH = os.path.join(ROOT, "config", "notion.json")
+
+NOTION_VERSION = "2022-06-28"
+OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+
+# Notion property names (must match exactly)
+MENTIONS_DETECTED_AT = "Detected At"
+MENTIONS_CONTENT_REL = "Content Queue"
+
+CONTENT_TOPIC = "Topic"
+CONTENT_AUDIENCE = "Audience"
+CONTENT_PLATFORM_TARGET = "Platform Target"
+CONTENT_HOOK = "Hook"
+CONTENT_KEY_POINTS = "Key Points"
+CONTENT_PROOF_POINTS = "Proof Points"
+CONTENT_SOURCE_LINKS = "Source Links"
+CONTENT_PRIORITY = "Priority"
+CONTENT_STATUS = "Status"
+CONTENT_SOURCE_MENTIONS = "Source Mentions"
+
+ALLOWED_AUDIENCE = ["CashBuyer", "Operator", "HNWI/LP"]
+ALLOWED_PLATFORM_TARGET = ["BiggerPockets", "LinkedIn", "X", "Substack"]
+DEFAULT_STATUS = "Backlog"
+
+SYNTHESIS_SCHEMA = {
+  "type": "object",
+  "additionalProperties": False,
+  "required": ["topics"],
+  "properties": {
+    "topics": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["topic", "audience", "platform_target", "priority", "hook", "key_points", "proof_points", "mention_ids"],
+        "properties": {
+          "topic": {"type": "string", "minLength": 5},
+          "audience": {"type": "string"},
+          "platform_target": {"type": "string"},
+          "priority": {"type": "integer", "minimum": 1, "maximum": 5},
+          "hook": {"type": "string"},
+          "key_points": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 10},
+          "proof_points": {"type": "array", "items": {"type": "string"}, "minItems": 0, "maxItems": 8},
+          "mention_ids": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 15}
+        }
+      }
+    }
+  }
+}
+
+def iso_z(dt_obj: dt.datetime) -> str:
+    return dt_obj.replace(microsecond=0).isoformat() + "Z"
+
+def load_cfg():
+    with open(CFG_PATH, "r") as f:
+        return json.load(f)
+
+def notion_headers(token: str):
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+        "Notion-Version": NOTION_VERSION,
+    }
+
+def notion_query_database(token: str, db_id: str, payload: dict):
+    url = f"https://api.notion.com/v1/databases/{db_id}/query"
+    out = []
+    cursor = None
+    while True:
+        p = dict(payload)
+        if cursor:
+            p["start_cursor"] = cursor
+        r = requests.post(url, headers=notion_headers(token), json=p, timeout=60)
+        r.raise_for_status()
+        data = r.json()
+        out.extend(data.get("results", []))
+        if not data.get("has_more"):
+            break
+        cursor = data.get("next_cursor")
+    return out
+
+def notion_create_page(token: str, parent_db_id: str, props: dict):
+    r = requests.post(
+        "https://api.notion.com/v1/pages",
+        headers=notion_headers(token),
+        json={"parent": {"database_id": parent_db_id}, "properties": props},
+        timeout=60
+    )
+    r.raise_for_status()
+    return r.json()
+
+def prop_text(p: dict) -> str:
+    t = p.get("type")
+    if t == "title":
+        arr = p.get("title", [])
+        return "".join([x.get("plain_text", "") for x in arr]).strip()
+    if t == "rich_text":
+        arr = p.get("rich_text", [])
+        return "".join([x.get("plain_text", "") for x in arr]).strip()
+    if t == "url":
+        return (p.get("url") or "").strip()
+    if t == "select":
+        sel = p.get("select")
+        return (sel.get("name") if sel else "").strip()
+    if t == "multi_select":
+        return [x.get("name","") for x in p.get("multi_select", [])]
+    if t == "number":
+        n = p.get("number")
+        return n
+    if t == "checkbox":
+        return bool(p.get("checkbox"))
+    if t == "date":
+        d = p.get("date")
+        return (d.get("start") if d else None)
+    return ""
+
+def normalize_choice(value: str, allowed: list[str], default: str) -> str:
+    if not isinstance(value, str):
+        return default
+    v = value.strip()
+    # exact match
+    if v in allowed:
+        return v
+    # case-insensitive match
+    for a in allowed:
+        if a.lower() == v.lower():
+            return a
+    return default
+
+def openai_synthesize(api_key: str, model: str, mentions: list[dict], topics_max: int):
+    system = f"""You produce DAILY CONTENT IDEAS from social listening mentions.
+
+Return ONLY a single JSON object, no markdown, no commentary.
+You must follow the output shape exactly.
+
+GOAL:
+- Create 1 to {topics_max} high-signal content topics from the mentions.
+- Each topic must link to 2–15 mention_ids from the input list.
+- Prefer topics that appear repeatedly or have strong operator pain.
+
+ENUMS (must match exactly):
+- audience: {ALLOWED_AUDIENCE}
+- platform_target: {ALLOWED_PLATFORM_TARGET}
+- priority: integer 1–5 where 1 is highest urgency/value.
+
+OUTPUT SHAPE:
+{{
+  "topics": [
+    {{
+      "topic": "string (working title)",
+      "audience": "CashBuyer|Operator|HNWI/LP",
+      "platform_target": "BiggerPockets|LinkedIn|X|Substack",
+      "priority": 1-5,
+      "hook": "1–2 lines",
+      "key_points": ["3–10 bullets"],
+      "proof_points": ["0–8 bullets (numbers, claims, examples)"],
+      "mention_ids": ["2–15 ids from input"]
+    }}
+  ]
+}}
+
+RULES:
+- If anything is compliance-sensitive, keep it educational and avoid allegations/terms; do not include names of private individuals.
+- Key points should be actionable and specific (frameworks, checklists, underwriting rules).
+- proof_points can be empty if not available; otherwise include concrete examples or numbers implied by the mentions.
+"""
+
+    user = {
+        "window": "last_24h",
+        "mentions": mentions,
+        "topics_max": topics_max
+    }
+
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": json.dumps(user, ensure_ascii=False)}
+        ],
+        "temperature": 0.2,
+        "response_format": {"type": "json_object"}
+    }
+
+    r = requests.post(
+        OPENAI_URL,
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        json=payload,
+        timeout=90
+    )
+    r.raise_for_status()
+    content = r.json()["choices"][0]["message"]["content"]
+    data = json.loads(content)
+    validate(instance=data, schema=SYNTHESIS_SCHEMA)
+    return data
+
+def main():
+    load_dotenv(os.path.join(ROOT, ".env"), override=True)
+
+    NOTION_TOKEN = os.getenv("NOTION_TOKEN", "")
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+    if not NOTION_TOKEN:
+        raise SystemExit("NOTION_TOKEN missing in .env")
+    if not OPENAI_API_KEY:
+        raise SystemExit("OPENAI_API_KEY missing in .env")
+
+    cfg = load_cfg()
+    mentions_db = cfg["mentions_db_id"]
+    content_db = cfg["content_db_id"]
+
+    hours = int(os.getenv("SYNTH_WINDOW_HOURS", "24"))
+    max_mentions = int(os.getenv("SYNTH_MAX_MENTIONS", "60"))
+    topics_max = int(os.getenv("SYNTH_TOPICS_MAX", "3"))
+    model = os.getenv("MODEL_SYNTHESIS", "gpt-4o-mini")
+
+    now = dt.datetime.now(dt.UTC)
+    start = now - dt.timedelta(hours=hours)
+
+    # Only consider mentions detected in window AND not already linked to Content Queue
+    mentions_pages = notion_query_database(
+        NOTION_TOKEN,
+        mentions_db,
+        {
+            "filter": {
+                "and": [
+                    {"property": MENTIONS_DETECTED_AT, "date": {"on_or_after": iso_z(start)}},
+                    {"property": MENTIONS_CONTENT_REL, "relation": {"is_empty": True}},
+                ]
+            },
+            "sorts": [{"property": MENTIONS_DETECTED_AT, "direction": "descending"}],
+            "page_size": 100
+        }
+    )
+
+    if not mentions_pages:
+        print("No new mentions eligible for daily synthesis (window + not linked to Content Queue).")
+        return
+
+    # cap for cost
+    mentions_pages = mentions_pages[:max_mentions]
+
+    # Build compact mention objects for the model
+    mentions = []
+    for pg in mentions_pages:
+        props = pg.get("properties", {})
+        mid = pg.get("id")
+        mentions.append({
+            "id": mid,
+            "platform": prop_text(props.get("Platform", {})),
+            "url": prop_text(props.get("URL", {})),
+            "author": prop_text(props.get("Author", {})),
+            "text": prop_text(props.get("Source Text", {})),
+            "source_query": prop_text(props.get("Source Query", {})),
+            "metros": prop_text(props.get("Metro", {})) if isinstance(prop_text(props.get("Metro", {})), list) else [],
+            "entities": prop_text(props.get("Entities", {})) if isinstance(prop_text(props.get("Entities", {})), list) else [],
+            "sentiment": prop_text(props.get("Sentiment", {})),
+            "priority": prop_text(props.get("Priority", {})),
+            "compliance_mode": bool(props.get("Compliance Mode", {}).get("checkbox", False))
+        })
+
+    # Synthesize topics
+    synth = openai_synthesize(OPENAI_API_KEY, model, mentions, topics_max=topics_max)
+
+    # Avoid duplicate topics already created today (by title match)
+    today_start = dt.datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    existing = notion_query_database(
+        NOTION_TOKEN,
+        content_db,
+        {
+            "filter": {
+                "timestamp": "created_time",
+                "created_time": {"on_or_after": iso_z(today_start)}
+            },
+            "page_size": 100
+        }
+    )
+    existing_titles = set()
+    for pg in existing:
+        title = prop_text(pg.get("properties", {}).get(CONTENT_TOPIC, {}))
+        if title:
+            existing_titles.add(title.strip().lower())
+
+    created = 0
+    for t in synth["topics"]:
+        topic = t["topic"].strip()
+        if topic.lower() in existing_titles:
+            print("SKIP (already created today):", topic)
+            continue
+
+        audience = normalize_choice(t["audience"], ALLOWED_AUDIENCE, "Operator")
+        platform_target = normalize_choice(t["platform_target"], ALLOWED_PLATFORM_TARGET, "BiggerPockets")
+        priority = int(t["priority"]) if isinstance(t["priority"], int) else 3
+        priority = max(1, min(5, priority))
+
+        mention_ids = list(dict.fromkeys(t["mention_ids"]))[:15]
+        id_to_url = {m["id"]: m.get("url","") for m in mentions}
+        id_to_text = {m["id"]: m.get("text","") for m in mentions}
+        id_to_query = {m["id"]: m.get("source_query","") for m in mentions}
+
+        source_links = "\n".join([id_to_url.get(mid,"") for mid in mention_ids if id_to_url.get(mid,"")])
+        source_text = "\n\n---\n\n".join([id_to_text.get(mid,"") for mid in mention_ids if id_to_text.get(mid,"")][:6])
+        source_query = "\n".join([q for q in [id_to_query.get(mid,"") for mid in mention_ids] if q])[:1800]
+
+        props = {
+            CONTENT_TOPIC: {"title": [{"text": {"content": topic}}]},
+            CONTENT_AUDIENCE: {"select": {"name": audience}},
+            CONTENT_PLATFORM_TARGET: {"select": {"name": platform_target}},
+            CONTENT_PRIORITY: {"number": priority},
+            CONTENT_STATUS: {"status": {"name": DEFAULT_STATUS}},
+            CONTENT_HOOK: {"rich_text": [{"text": {"content": (t["hook"] or "").strip()[:1800]}}]},
+            CONTENT_KEY_POINTS: {"rich_text": [{"text": {"content": "\n".join([f"- {x}" for x in t["key_points"]])[:1800]}}]},
+            CONTENT_PROOF_POINTS: {"rich_text": [{"text": {"content": "\n".join([f"- {x}" for x in t["proof_points"]])[:1800]}}]},
+            CONTENT_SOURCE_LINKS: {"rich_text": [{"text": {"content": (source_links or "").strip()[:1800]}}]},
+            "Source Text": {"rich_text": [{"text": {"content": (source_text or "").strip()[:1800]}}]},
+            "Source Query": {"rich_text": [{"text": {"content": (source_query or "").strip()[:1800]}}]},
+            CONTENT_SOURCE_MENTIONS: {"relation": [{"id": mid} for mid in mention_ids]},
+        }
+
+        page = notion_create_page(NOTION_TOKEN, content_db, props)
+        created += 1
+        print("CREATED Content:", page.get("id"), "|", topic)
+
+    if created == 0:
+        print("No new Content items created (duplicates or validation).")
+    else:
+        print(f"Done. Created {created} Content item(s).")
+
+if __name__ == "__main__":
+    main()
