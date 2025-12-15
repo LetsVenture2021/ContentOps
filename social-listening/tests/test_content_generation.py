@@ -152,7 +152,7 @@ class TestDraftGeneration(unittest.TestCase):
         length_map = {
             "BiggerPockets": 2500,
             "LinkedIn": 1000,
-            "X": 200,  # Changed from 10 to meet minimum body length of 100 words
+            "X": 200,  # X validation counts tweets (via \n\n), but body still needs 100+ words for schema
             "Substack": 3000
         }
         
