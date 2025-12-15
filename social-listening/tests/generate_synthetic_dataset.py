@@ -502,7 +502,9 @@ def main():
             example_counter += 1
     
     # Save to JSONL file
-    output_path = "/home/runner/work/ContentOps/ContentOps/social-listening/tests/pv_labeled_examples_pack.jsonl"
+    import os
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_path = os.path.join(script_dir, "pv_labeled_examples_pack.jsonl")
     with open(output_path, "w") as f:
         for example in examples:
             f.write(json.dumps(example, ensure_ascii=False) + "\n")

@@ -46,7 +46,11 @@ THRESHOLDS = {
     "content_population": 0.90
 }
 
-def load_dataset(path: str, max_examples: int = None) -> list[dict]:
+# Constants for evaluation
+LOW_CONFIDENCE_THRESHOLD = 0.7
+MAX_FAILURES_DISPLAYED = 10
+
+def load_dataset(path: str, max_examples: int | None = None) -> list[dict]:
     """Load labeled examples from JSONL file."""
     examples = []
     with open(path, 'r') as f:
@@ -139,7 +143,7 @@ def evaluate_example(example: dict, model: str) -> dict:
         results["scores"]["content_checks"]["content_bullets_filled"] = 1.0 if len(actual["content"]["outline_bullets"]) > 0 else 0.0
     
     # Confidence check
-    results["scores"]["low_confidence"] = actual.get("confidence", 1.0) < 0.7
+    results["scores"]["low_confidence"] = actual.get("confidence", 1.0) < LOW_CONFIDENCE_THRESHOLD
     
     # Store actual for failure reporting
     results["actual"] = actual
@@ -320,15 +324,15 @@ def print_report(report: dict):
         print(f"  Content bullets filled:  {int(cb[0])}/{cb[1]} when route=true")
     print()
     
-    print(f"LOW CONFIDENCE FLAGS: {report['low_confidence_count']} example(s) < 0.7")
+    print(f"LOW CONFIDENCE FLAGS: {report['low_confidence_count']} example(s) < {LOW_CONFIDENCE_THRESHOLD}")
     print()
     
     if report["failures"]:
         print("FAILURES:")
-        for failure in report["failures"][:10]:  # Show first 10
+        for failure in report["failures"][:MAX_FAILURES_DISPLAYED]:
             print(f"  {failure}")
-        if len(report["failures"]) > 10:
-            print(f"  ... and {len(report['failures']) - 10} more")
+        if len(report["failures"]) > MAX_FAILURES_DISPLAYED:
+            print(f"  ... and {len(report['failures']) - MAX_FAILURES_DISPLAYED} more")
         print()
     
     print("PASS CRITERIA:")
