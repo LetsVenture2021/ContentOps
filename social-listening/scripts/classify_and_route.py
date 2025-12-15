@@ -179,6 +179,42 @@ OUTPUT MUST MATCH THIS EXACT SHAPE:
   "notes": string
 }
 
+ENTITY EXTRACTION RULES (CRITICAL - FOLLOW EXACTLY):
+Extract entities as complete phrases, not fragments:
+  - "hard money lender" NOT ["hard", "money", "lender"] or ["hard money", "lender"]
+  - "private money lender" NOT "private money"
+  - "bridge loan" NOT ["bridge", "loan"]
+  - "earnest money" NOT "earnest"
+  - "DSCR loan" NOT "DSCR"
+
+Real estate financing terms (extract if mentioned):
+  - "hard money lender", "private money lender", "DSCR", "bridge loan", "fix and flip loan"
+  - "earnest money", "proof of funds", "rate buydown", "seller concessions"
+  - "insurance", "property taxes", "escrow", "appraisal"
+
+Deal roles (extract if mentioned):
+  - "wholesaler", "cash buyer", "JV partner", "LP", "passive investor", "operator"
+  - "lender", "fund manager", "syndicator"
+
+Property types (extract if mentioned):
+  - "multifamily", "single-family", "duplex", "triplex", "fourplex"
+  - "commercial", "retail", "industrial", "land"
+
+Competitor names (extract EXACTLY as shown if mentioned):
+  - "New Western", "BatchLeads", "PropStream", "DealMachine", "REI Reply"
+  - "Redfin", "Zillow", "Bigger Pockets" (note: platform name variations)
+
+PV-related entities (extract EXACTLY if mentioned):
+  - "Pryceless Ventures", "PV Network", "Matthew Bernal"
+
+METROS EXTRACTION RULES:
+Extract specific Texas metros when mentioned:
+  - "Houston", "Austin", "San Antonio", "DFW", "Dallas", "Fort Worth", "Plano", "Frisco"
+  - "El Paso", "Arlington", "Corpus Christi", "Lubbock", "Irving"
+  - If only "Texas" or "TX" mentioned without city: use ["Texas"]
+  - If specific neighborhood/area mentioned: extract the metro (e.g., "East Austin" → "Austin")
+  - If multiple metros mentioned: include all (e.g., ["Houston", "Dallas"])
+
 DECISION RULES:
 - routes.lead = true if the author is asking for funding, a lender, JV, deal help, investor services, referrals/recommendations, or a direct connection.
 - routes.reputation = true if there are complaints, accusations, threats, fraud/scam claims, legal disputes, or reputational risk about a person/company.
@@ -186,17 +222,20 @@ DECISION RULES:
 - compliance_mode = true if ANY of the following are present: allegations, disputes, threats, doxxing, licensing claims, fraud/scam/illegal activity claims, anything legally sensitive.
   When compliance_mode = true, draft replies must be conservative: no admissions, no accusations, no promises; suggest moving to private channel and/or consulting counsel.
 
-PRIORITY (1 is highest urgency):
-1 = urgent, high-stakes, time-sensitive, strong lead intent OR high reputation risk
-2 = important, high-value lead OR material reputation concern
-3 = normal lead/content opportunity
-4 = low impact informational
-5 = noise / very low signal
+PRIORITY (1 is highest urgency) - BE PRECISE:
+1 = URGENT: 7-14 day close timelines, fraud/scam/ponzi allegations, legal threats, capital deploy inquiries >$500k, wire fraud claims, licensing disputes
+2 = IMPORTANT: 21-30 day close timelines, neutral reputation due diligence questions, high-value wholesaler deals, DSCR underwriting pain points, insurance cost issues
+3 = NORMAL: Generic lender questions, content opportunities, 30+ day timelines, positive proof mentions, general market trends, educational questions
+4 = LOW IMPACT: Informational questions with no action needed, general curiosity, platform feature questions
+5 = NOISE: Off-topic discussions, spam, unclear intent, no real estate relevance
 
-FIELD POPULATION RULES (IMPORTANT):
-- If routes.lead is false: set lead.title="" and lead.draft_reply=""
-- If routes.reputation is false: set reputation.title="", reputation.draft_reply="", and reputation.risk_level="Low"
-- If routes.content is false: set content.title="", content.angle="", content.outline_bullets=[], content.canva_prompts=[]
+FIELD POPULATION RULES (STRICTLY ENFORCE):
+- If routes.lead is TRUE: lead.title and lead.draft_reply MUST be non-empty strings (minimum 20 characters each)
+- If routes.lead is FALSE: set lead.title="" and lead.draft_reply=""
+- If routes.reputation is TRUE: reputation.title and reputation.draft_reply MUST be non-empty strings, risk_level MUST be Low/Medium/High based on severity
+- If routes.reputation is FALSE: set reputation.title="", reputation.draft_reply="", and reputation.risk_level="Low"
+- If routes.content is TRUE: content.title, content.angle MUST be non-empty, content.outline_bullets MUST have at least 3 items, content.canva_prompts MUST have at least 1 item
+- If routes.content is FALSE: set content.title="", content.angle="", content.outline_bullets=[], content.canva_prompts=[]
 - notes: 1–3 short sentences summarizing why you routed/prioritized the way you did.
 
 If prior_triage is provided, use it as a hint but correct it if wrong.

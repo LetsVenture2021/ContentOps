@@ -108,3 +108,50 @@ This application enhances ContentOps workflows by providing:
 This tool acts as the organization’s **“ears on social media”**, enabling content and brand teams to stay informed, proactive, and strategically aligned with real-world audience conversations and market dynamics.
 
 **Would you like this README adapted for a public open-source repo, an internal enterprise tool, or an investor-facing technical overview?**
+
+---
+
+## Testing & Quality Assurance
+
+### Classifier Evaluation
+
+The `social-listening/scripts/eval_classifier.py` script provides regression testing for the AI-powered triage classifier that routes social mentions to appropriate queues (leads, reputation management, content opportunities).
+
+**Quick Start:**
+
+```bash
+# Run evaluation on 10 examples (fast iteration)
+cd social-listening
+MAX_EXAMPLES=10 python scripts/eval_classifier.py
+
+# Run full evaluation suite (100 examples)
+MAX_EXAMPLES=100 python scripts/eval_classifier.py
+
+# Use custom model for testing
+OPENAI_MODEL_TRIAGE=gpt-4o MAX_EXAMPLES=50 python scripts/eval_classifier.py
+```
+
+**What It Tests:**
+
+- **Core Routing Accuracy**: Validates sentiment, priority, compliance mode, and routing decisions
+- **Entity Extraction**: Measures Jaccard similarity for extracted entities and metro areas
+- **Content Population**: Ensures conditional fields are properly filled based on routing decisions
+- **Confidence Scoring**: Flags low-confidence predictions for review
+
+**When to Run:**
+
+- After modifying system prompts in `classify_and_route.py`
+- Before deploying classifier changes to production
+- When evaluating new OpenAI models
+- As part of CI/CD validation pipelines
+
+**Output:**
+
+The script generates a comprehensive report showing accuracy metrics across all categories and exits with code 0 (pass) or 1 (fail) based on configurable thresholds.
+
+**Test Data:**
+
+The evaluation uses `tests/pv_labeled_examples_pack.jsonl`, a dataset of 100 synthetic social listening mentions with expected classifications, covering:
+- Lead inquiries (hard money, cash buyers, capital partnerships)
+- Reputation management (negative sentiment, questions, testimonials)
+- Content opportunities (DSCR loans, competitor mentions, market trends)
